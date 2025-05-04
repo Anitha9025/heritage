@@ -1,24 +1,68 @@
 
 import { useParams, Link } from "react-router-dom";
 import { Speaker, MessageCircle, MapPin } from "lucide-react";
-import { heritageSites } from "@/data/mockData";
-import BackButton from "@/components/BackButton";
-import FloatingButton from "@/components/FloatingButton";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { getHeritageSiteInfo, speakText, stopSpeech } from "@/services/api";
+import { getHeritageSiteInfo, speakText, stopSpeech, getSelectedLanguage } from "@/services/api";
+import BackButton from "@/components/BackButton";
+import FloatingButton from "@/components/FloatingButton";
+
+interface Site {
+  id: string;
+  title: string;
+  location: string;
+  description: string;
+  image: string;
+  isPopular: boolean;
+  audioAvailable: boolean;
+}
+
+// Sample data for when site not found in backend
+const defaultSites: Record<string, Site> = {
+  "1": {
+    id: "1",
+    title: "Fort St. George",
+    location: "Rajaji Road, Chennai",
+    description: "Built in 1644, Fort St. George was the first English fortress in India, founded by the British East India Company.",
+    image: "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05",
+    isPopular: true,
+    audioAvailable: true
+  },
+  "2": {
+    title: "Mahabalipuram",
+    id: "2",
+    location: "East Coast Road",
+    description: "Mahabalipuram, also known as Mamallapuram, is a UNESCO World Heritage site famous for its 7th and 8th-century rock-cut temples.",
+    image: "https://images.unsplash.com/photo-1494891848038-7bd202a2afeb",
+    isPopular: true,
+    audioAvailable: true
+  }
+};
 
 const SiteInfo = () => {
   const { id } = useParams<{ id: string }>();
-  const site = heritageSites.find(site => site.id === id);
+  const [site, setSite] = useState<Site | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [siteDescription, setSiteDescription] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedLanguage, setSelectedLanguage] = useState("English");
   
   useEffect(() => {
-    if (site) {
+    // Get the user's selected language
+    const language = getSelectedLanguage();
+    setSelectedLanguage(language);
+    
+    // Set initial site data from our default sites
+    if (id && defaultSites[id]) {
+      setSite(defaultSites[id]);
+    }
+    
+    if (id) {
       setIsLoading(true);
-      getHeritageSiteInfo(site.title)
+      // Get the site title from our default sites or use a placeholder
+      const siteTitle = defaultSites[id]?.title || "Unknown Site";
+      
+      getHeritageSiteInfo(siteTitle, selectedLanguage)
         .then((response: any) => {
           setSiteDescription(response.description);
           setIsLoading(false);
@@ -29,7 +73,7 @@ const SiteInfo = () => {
           setIsLoading(false);
         });
     }
-  }, [site]);
+  }, [id, selectedLanguage]);
   
   if (!site) {
     return (
@@ -55,9 +99,12 @@ const SiteInfo = () => {
           console.error("Error stopping audio:", error);
         });
     } else {
-      speakText(siteDescription)
+      speakText(siteDescription || site.description, selectedLanguage)
         .then(() => {
           setIsPlaying(true);
+          toast.success("Playing audio narration", {
+            description: `Narration in ${selectedLanguage}`
+          });
         })
         .catch(error => {
           console.error("Error playing audio:", error);
@@ -133,7 +180,7 @@ const SiteInfo = () => {
       <div className="fixed bottom-6 left-6">
         <FloatingButton 
           icon={<MapPin size={24} />} 
-          to="/map"
+          to={`/map?site=${encodeURIComponent(site.title)}`}
           className="bg-heritage-dark"
           ariaLabel="View on map"
         />

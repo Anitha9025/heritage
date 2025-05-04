@@ -2,21 +2,41 @@
 import { useState, useRef, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Send } from "lucide-react";
-import { chatConversation, heritageSites } from "@/data/mockData";
 import BackButton from "@/components/BackButton";
-import { getChatResponse } from "@/services/api";
+import { getChatResponse, getSelectedLanguage } from "@/services/api";
 import { toast } from "sonner";
+
+interface Site {
+  id: string;
+  title: string;
+}
+
+// Sample data for sites
+const sites: Record<string, Site> = {
+  "1": { id: "1", title: "Fort St. George" },
+  "2": { id: "2", title: "Mahabalipuram" },
+  "3": { id: "3", title: "Kapaleeshwarar Temple" },
+};
+
+interface Message {
+  id: string;
+  sender: "user" | "bot";
+  text: string;
+  timestamp: Date;
+  image?: string;
+}
 
 const Chatbot = () => {
   const { id } = useParams<{ id: string }>();
-  const site = heritageSites.find(site => site.id === id);
-  const initialMessages = chatConversation[id || "1"] || [];
+  const site = sites[id || "1"];
   
-  const [messages, setMessages] = useState(initialMessages);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState("English");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Scroll to bottom of chat whenever messages change
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -25,6 +45,21 @@ const Chatbot = () => {
     scrollToBottom();
   }, [messages]);
 
+  useEffect(() => {
+    // Get the user's selected language
+    const language = getSelectedLanguage();
+    setSelectedLanguage(language);
+    
+    // Add welcome message
+    const welcomeMsg: Message = {
+      id: "welcome",
+      sender: "bot",
+      text: `Welcome to the heritage AI chat. I can answer questions about ${site?.title || "heritage sites"}. What would you like to know?`,
+      timestamp: new Date()
+    };
+    setMessages([welcomeMsg]);
+  }, [site]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -32,9 +67,9 @@ const Chatbot = () => {
     setIsProcessing(true);
     
     // Add user message
-    const userMsg = {
+    const userMsg: Message = {
       id: Date.now().toString(),
-      sender: "user" as const,
+      sender: "user",
       text: input,
       timestamp: new Date()
     };
@@ -44,11 +79,11 @@ const Chatbot = () => {
     setInput("");
     
     // Call the chatbot API
-    getChatResponse(userQuestion, site?.title || "heritage site")
+    getChatResponse(userQuestion, site?.title || "heritage site", selectedLanguage)
       .then((response: any) => {
-        const botMsg = {
+        const botMsg: Message = {
           id: (Date.now() + 1).toString(),
-          sender: "bot" as const,
+          sender: "bot",
           text: response,
           timestamp: new Date()
         };
@@ -60,9 +95,9 @@ const Chatbot = () => {
         toast.error("Failed to get response from AI");
         
         // Add error message
-        const errorMsg = {
+        const errorMsg: Message = {
           id: (Date.now() + 1).toString(),
-          sender: "bot" as const,
+          sender: "bot",
           text: "Sorry, I'm having trouble responding right now. Please try again later.",
           timestamp: new Date()
         };
@@ -120,7 +155,7 @@ const Chatbot = () => {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Write a message..."
+            placeholder="Ask me about this heritage site..."
             className="flex-1 py-3 px-4 rounded-full border border-gray-300 focus:outline-none focus:border-heritage-primary"
             disabled={isProcessing}
           />

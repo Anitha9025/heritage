@@ -1,20 +1,47 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { languages } from "@/data/mockData";
 import SearchBar from "@/components/SearchBar";
 import BackButton from "@/components/BackButton";
+import { getSupportedLanguages, saveSelectedLanguage } from "@/services/api";
+import { toast } from "sonner";
+
+interface Language {
+  id: string;
+  name: string;
+}
 
 const LanguageSelection = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
+  const [languages, setLanguages] = useState<Language[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchLanguages = async () => {
+      try {
+        const supportedLangs = await getSupportedLanguages();
+        setLanguages(supportedLangs as Language[]);
+      } catch (error) {
+        console.error("Error fetching languages:", error);
+        toast.error("Failed to load supported languages");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchLanguages();
+  }, []);
 
   const filteredLanguages = languages.filter(lang => 
     lang.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleLanguageSelect = () => {
-    // In a real app, we would store the selected language
+  const handleLanguageSelect = (language: string) => {
+    saveSelectedLanguage(language);
+    toast.success(`Language set to ${language}`, {
+      description: "The app will now display content in your selected language"
+    });
     navigate("/home");
   };
 
@@ -39,20 +66,34 @@ const LanguageSelection = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
           
-          <div className="space-y-4">
-            {filteredLanguages.map((language) => (
-              <button
-                key={language.id}
-                onClick={handleLanguageSelect}
-                className="w-full py-4 px-6 text-left rounded-xl bg-white border border-gray-200 hover:border-heritage-primary hover:bg-heritage-light transition-all flex items-center justify-between card-shadow"
-              >
-                <span className="text-lg font-medium">{language.name}</span>
-                <svg className="w-5 h-5 text-heritage-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
-                </svg>
-              </button>
-            ))}
-          </div>
+          {isLoading ? (
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="w-full h-16 rounded-xl bg-gray-200 animate-pulse"></div>
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {filteredLanguages.length > 0 ? (
+                filteredLanguages.map((language) => (
+                  <button
+                    key={language.id}
+                    onClick={() => handleLanguageSelect(language.name)}
+                    className="w-full py-4 px-6 text-left rounded-xl bg-white border border-gray-200 hover:border-heritage-primary hover:bg-heritage-light transition-all flex items-center justify-between card-shadow"
+                  >
+                    <span className="text-lg font-medium">{language.name}</span>
+                    <svg className="w-5 h-5 text-heritage-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                  </button>
+                ))
+              ) : (
+                <div className="text-center text-gray-500 py-6">
+                  No languages found matching "{searchTerm}"
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

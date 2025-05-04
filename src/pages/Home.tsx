@@ -1,13 +1,22 @@
 
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { MapPin, MessageCircle, Languages } from "lucide-react";
 import { heritageSites } from "@/data/mockData";
 import SearchBar from "@/components/SearchBar";
 import FloatingButton from "@/components/FloatingButton";
+import { toast } from "sonner";
 
 const Home = () => {
   const [location, setLocation] = useState("Chennai");
+  const navigate = useNavigate();
+
+  const handleLanguageButtonClick = () => {
+    toast.info("Changing language", {
+      description: "Redirecting to language selection screen"
+    });
+    navigate("/");
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
@@ -19,7 +28,11 @@ const Home = () => {
             value={location}
             onChange={(e) => setLocation(e.target.value)}
           />
-          <button className="p-2 bg-white rounded-full shadow-sm">
+          <button 
+            className="p-2 bg-white rounded-full shadow-sm hover:bg-gray-100 transition-colors"
+            onClick={handleLanguageButtonClick}
+            aria-label="Change language"
+          >
             <Languages size={20} className="text-heritage-primary" />
           </button>
         </div>

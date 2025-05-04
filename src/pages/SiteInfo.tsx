@@ -4,10 +4,13 @@ import { Speaker, MessageCircle, MapPin } from "lucide-react";
 import { heritageSites } from "@/data/mockData";
 import BackButton from "@/components/BackButton";
 import FloatingButton from "@/components/FloatingButton";
+import { useState } from "react";
+import { toast } from "sonner";
 
 const SiteInfo = () => {
   const { id } = useParams<{ id: string }>();
   const site = heritageSites.find(site => site.id === id);
+  const [isPlaying, setIsPlaying] = useState(false);
   
   if (!site) {
     return (
@@ -23,8 +26,18 @@ const SiteInfo = () => {
   }
 
   const handlePlayAudio = () => {
-    // In a real app, this would play the audio narration
-    console.log("Playing audio for", site.title);
+    setIsPlaying(prev => !prev);
+    
+    if (!isPlaying) {
+      toast.success("Starting audio narration", {
+        description: `Playing narration for ${site.title}`,
+      });
+      // In a real app, this would play the audio narration
+      console.log("Playing audio for", site.title);
+    } else {
+      toast.info("Stopped audio narration");
+      console.log("Stopping audio for", site.title);
+    }
   };
 
   return (
@@ -47,10 +60,10 @@ const SiteInfo = () => {
           {site.audioAvailable && (
             <button 
               onClick={handlePlayAudio}
-              className="p-3 rounded-full bg-white shadow-sm"
-              aria-label="Play audio narration"
+              className={`p-3 rounded-full ${isPlaying ? 'bg-heritage-primary text-white' : 'bg-white'} shadow-sm transition-colors`}
+              aria-label={isPlaying ? "Stop audio narration" : "Play audio narration"}
             >
-              <Speaker size={20} className="text-heritage-primary" />
+              <Speaker size={20} className={isPlaying ? "text-white" : "text-heritage-primary"} />
             </button>
           )}
         </div>

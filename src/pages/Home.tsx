@@ -15,6 +15,7 @@ const Home = () => {
     toast.info("Changing language", {
       description: "Redirecting to language selection screen"
     });
+    // Navigate to language selection page
     navigate("/");
   };
 

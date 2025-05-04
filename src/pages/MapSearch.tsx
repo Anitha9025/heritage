@@ -1,15 +1,36 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MapPin, Search } from "lucide-react";
 import BackButton from "@/components/BackButton";
+import { getCoordinates } from "@/services/api";
+import { toast } from "sonner";
 
 const MapSearch = () => {
   const [searchValue, setSearchValue] = useState("");
+  const [coordinates, setCoordinates] = useState<{latitude: number, longitude: number} | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
   
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real app, this would search for heritage sites on the map
-    console.log("Searching for:", searchValue);
+    if (!searchValue.trim()) return;
+    
+    setIsSearching(true);
+    
+    // Call our simulated API
+    getCoordinates(searchValue)
+      .then((coords: any) => {
+        setCoordinates(coords);
+        toast.success(`Found location for ${searchValue}`, {
+          description: `Coordinates: ${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)}`
+        });
+      })
+      .catch(error => {
+        console.error("Error getting coordinates:", error);
+        toast.error(`Could not find location for ${searchValue}`);
+      })
+      .finally(() => {
+        setIsSearching(false);
+      });
   };
 
   return (
@@ -18,7 +39,8 @@ const MapSearch = () => {
         {/* This would be a real map in a production app */}
         <div className="absolute inset-0 bg-gray-300 flex items-center justify-center">
           <div className="text-heritage-dark text-lg font-medium">
-            Interactive Map View
+            {isSearching ? "Searching for location..." : 
+             coordinates ? `Showing: ${searchValue}` : "Interactive Map View"}
           </div>
         </div>
         
@@ -66,9 +88,10 @@ const MapSearch = () => {
           
           <button 
             type="submit"
-            className="w-full bg-heritage-primary hover:bg-blue-600 text-white font-medium py-3 rounded-lg transition-colors"
+            disabled={isSearching || !searchValue.trim()}
+            className={`w-full ${isSearching || !searchValue.trim() ? 'bg-gray-400' : 'bg-heritage-primary hover:bg-blue-600'} text-white font-medium py-3 rounded-lg transition-colors`}
           >
-            Search
+            {isSearching ? "Searching..." : "Search"}
           </button>
         </form>
         
@@ -76,7 +99,14 @@ const MapSearch = () => {
           <h3 className="font-medium text-gray-700 mb-3">Nearby Sites</h3>
           <div className="space-y-2">
             {["Fort St. George", "Kapaleeshwarar Temple", "Mahabalipuram"].map((site, index) => (
-              <div key={index} className="p-3 border border-gray-200 rounded-lg flex items-center">
+              <div 
+                key={index} 
+                className="p-3 border border-gray-200 rounded-lg flex items-center cursor-pointer hover:bg-gray-50"
+                onClick={() => {
+                  setSearchValue(site);
+                  handleSearch(new Event('submit') as any);
+                }}
+              >
                 <MapPin size={18} className="text-heritage-primary mr-3" />
                 <span>{site}</span>
               </div>

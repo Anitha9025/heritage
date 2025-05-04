@@ -4,13 +4,32 @@ import { Speaker, MessageCircle, MapPin } from "lucide-react";
 import { heritageSites } from "@/data/mockData";
 import BackButton from "@/components/BackButton";
 import FloatingButton from "@/components/FloatingButton";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import { getHeritageSiteInfo, speakText, stopSpeech } from "@/services/api";
 
 const SiteInfo = () => {
   const { id } = useParams<{ id: string }>();
   const site = heritageSites.find(site => site.id === id);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [siteDescription, setSiteDescription] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  
+  useEffect(() => {
+    if (site) {
+      setIsLoading(true);
+      getHeritageSiteInfo(site.title)
+        .then((response: any) => {
+          setSiteDescription(response.description);
+          setIsLoading(false);
+        })
+        .catch(error => {
+          console.error("Error fetching site information:", error);
+          toast.error("Failed to load site information");
+          setIsLoading(false);
+        });
+    }
+  }, [site]);
   
   if (!site) {
     return (
@@ -26,17 +45,24 @@ const SiteInfo = () => {
   }
 
   const handlePlayAudio = () => {
-    setIsPlaying(prev => !prev);
-    
-    if (!isPlaying) {
-      toast.success("Starting audio narration", {
-        description: `Playing narration for ${site.title}`,
-      });
-      // In a real app, this would play the audio narration
-      console.log("Playing audio for", site.title);
+    if (isPlaying) {
+      stopSpeech()
+        .then(() => {
+          setIsPlaying(false);
+          toast.info("Stopped audio narration");
+        })
+        .catch(error => {
+          console.error("Error stopping audio:", error);
+        });
     } else {
-      toast.info("Stopped audio narration");
-      console.log("Stopping audio for", site.title);
+      speakText(siteDescription)
+        .then(() => {
+          setIsPlaying(true);
+        })
+        .catch(error => {
+          console.error("Error playing audio:", error);
+          toast.error("Failed to play audio narration");
+        });
     }
   };
 
@@ -57,15 +83,13 @@ const SiteInfo = () => {
       <div className="relative -mt-8 rounded-t-3xl bg-heritage-light pt-6 px-4 min-h-screen">
         <div className="flex justify-between items-start mb-6">
           <h1 className="text-2xl font-bold text-heritage-dark">{site.title}</h1>
-          {site.audioAvailable && (
-            <button 
-              onClick={handlePlayAudio}
-              className={`p-3 rounded-full ${isPlaying ? 'bg-heritage-primary text-white' : 'bg-white'} shadow-sm transition-colors`}
-              aria-label={isPlaying ? "Stop audio narration" : "Play audio narration"}
-            >
-              <Speaker size={20} className={isPlaying ? "text-white" : "text-heritage-primary"} />
-            </button>
-          )}
+          <button 
+            onClick={handlePlayAudio}
+            className={`p-3 rounded-full ${isPlaying ? 'bg-heritage-primary text-white' : 'bg-white'} shadow-sm transition-colors`}
+            aria-label={isPlaying ? "Stop audio narration" : "Play audio narration"}
+          >
+            <Speaker size={20} className={isPlaying ? "text-white" : "text-heritage-primary"} />
+          </button>
         </div>
         
         <div className="flex items-center text-gray-600 mb-6">
@@ -75,7 +99,11 @@ const SiteInfo = () => {
         
         <div className="bg-white rounded-xl p-5 shadow-sm mb-6">
           <h2 className="text-lg font-semibold mb-3 text-heritage-dark">About this site</h2>
-          <p className="text-gray-700 leading-relaxed">{site.description}</p>
+          {isLoading ? (
+            <div className="animate-pulse h-24 bg-gray-100 rounded"></div>
+          ) : (
+            <p className="text-gray-700 leading-relaxed">{siteDescription || site.description}</p>
+          )}
         </div>
         
         <div className="bg-white rounded-xl p-5 shadow-sm mb-20">

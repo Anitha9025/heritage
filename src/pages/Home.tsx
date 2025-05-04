@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { MapPin, MessageCircle, Language } from "lucide-react";
+import { MapPin, MessageCircle, Languages } from "lucide-react";
 import { heritageSites } from "@/data/mockData";
 import SearchBar from "@/components/SearchBar";
 import FloatingButton from "@/components/FloatingButton";
@@ -20,7 +20,7 @@ const Home = () => {
             onChange={(e) => setLocation(e.target.value)}
           />
           <button className="p-2 bg-white rounded-full shadow-sm">
-            <Language size={20} className="text-heritage-primary" />
+            <Languages size={20} className="text-heritage-primary" />
           </button>
         </div>
       </div>

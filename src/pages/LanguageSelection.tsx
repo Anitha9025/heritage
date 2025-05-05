@@ -46,8 +46,9 @@ const LanguageSelection = () => {
       const translatedMessage = await translateText(`Language set to ${language}`, language);
       const translatedDescription = await translateText("The app will now display content in your selected language", language);
       
-      toast.success(translatedMessage, {
-        description: translatedDescription
+      // Fix: Ensure that translatedMessage and translatedDescription are strings
+      toast.success(translatedMessage as string, {
+        description: translatedDescription as string
       });
       
       navigate("/home");

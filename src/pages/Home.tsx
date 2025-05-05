@@ -53,7 +53,8 @@ const Home = () => {
     featuredSites: "Featured Sites",
     allSites: "All Heritage Sites",
     noSitesFound: "No heritage sites found matching",
-    resetSearch: "Reset search"
+    resetSearch: "Reset search",
+    searchingFor: "Showing heritage sites in"
   });
   const navigate = useNavigate();
 
@@ -118,18 +119,40 @@ const Home = () => {
         
         setDisplayedSites(formattedSites);
         
-        toast.success(`Showing results for "${searchTerm}"`, {
-          description: `Found ${formattedSites.length} heritage sites`
+        const successMessage = selectedLanguage === "English" 
+          ? `Showing results for "${searchTerm}"`
+          : await translateText(`Showing results for "${searchTerm}"`, selectedLanguage);
+          
+        const descriptionMessage = selectedLanguage === "English"
+          ? `Found ${formattedSites.length} heritage sites`
+          : await translateText(`Found ${formattedSites.length} heritage sites`, selectedLanguage);
+        
+        toast.success(successMessage as string, {
+          description: descriptionMessage as string
         });
       } else {
         setDisplayedSites([]);
-        toast.error(`No sites found for "${searchTerm}"`, {
-          description: "Try another place name"
+        
+        const errorMessage = selectedLanguage === "English"
+          ? `No sites found for "${searchTerm}"`
+          : await translateText(`No sites found for "${searchTerm}"`, selectedLanguage);
+          
+        const descriptionMessage = selectedLanguage === "English"
+          ? "Try another place name"
+          : await translateText("Try another place name", selectedLanguage);
+        
+        toast.error(errorMessage as string, {
+          description: descriptionMessage as string
         });
       }
     } catch (error) {
       console.error("Error searching for heritage sites:", error);
-      toast.error("Failed to search for heritage sites");
+      
+      const errorMessage = selectedLanguage === "English"
+        ? "Failed to search for heritage sites"
+        : await translateText("Failed to search for heritage sites", selectedLanguage);
+      
+      toast.error(errorMessage as string);
       
       // Fallback to default sites
       setDisplayedSites([]);
@@ -217,7 +240,7 @@ const Home = () => {
             {displayedSites.length > 0 ? (
               <>
                 <h2 className="font-semibold text-lg text-heritage-dark">
-                  {translatedLabels.featuredSites}
+                  {translatedLabels.searchingFor} "{searchTerm}"
                 </h2>
                 
                 <div className="flex overflow-x-auto pb-4 gap-4 -mx-4 px-4 snap-x">

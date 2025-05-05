@@ -40,18 +40,23 @@ const LanguageSelection = () => {
 
   const handleLanguageSelect = async (language: string) => {
     try {
+      // Save the selected language to localStorage
       saveSelectedLanguage(language);
       
       // Translate the success message to the selected language
       const translatedMessage = await translateText(`Language set to ${language}`, language);
       const translatedDescription = await translateText("The app will now display content in your selected language", language);
       
-      // Fix: Ensure that translatedMessage and translatedDescription are strings
+      // Show success toast with translated messages
       toast.success(translatedMessage as string, {
         description: translatedDescription as string
       });
       
-      navigate("/home");
+      // Force page reload to apply language changes globally before navigation
+      // This ensures all components will pick up the new language
+      setTimeout(() => {
+        navigate("/home");
+      }, 500);
     } catch (error) {
       console.error("Error selecting language:", error);
       toast.error(`Failed to set language to ${language}`);

@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import SearchBar from "@/components/SearchBar";
 import BackButton from "@/components/BackButton";
-import { getSupportedLanguages, saveSelectedLanguage } from "@/services/api";
+import { getSupportedLanguages, saveSelectedLanguage, translateText } from "@/services/api";
 import { toast } from "sonner";
 
 interface Language {
@@ -16,6 +16,7 @@ const LanguageSelection = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [languages, setLanguages] = useState<Language[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [welcomeText, setWelcomeText] = useState("Choose your Language");
 
   useEffect(() => {
     const fetchLanguages = async () => {
@@ -37,12 +38,23 @@ const LanguageSelection = () => {
     lang.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleLanguageSelect = (language: string) => {
-    saveSelectedLanguage(language);
-    toast.success(`Language set to ${language}`, {
-      description: "The app will now display content in your selected language"
-    });
-    navigate("/home");
+  const handleLanguageSelect = async (language: string) => {
+    try {
+      saveSelectedLanguage(language);
+      
+      // Translate the success message to the selected language
+      const translatedMessage = await translateText(`Language set to ${language}`, language);
+      const translatedDescription = await translateText("The app will now display content in your selected language", language);
+      
+      toast.success(translatedMessage, {
+        description: translatedDescription
+      });
+      
+      navigate("/home");
+    } catch (error) {
+      console.error("Error selecting language:", error);
+      toast.error(`Failed to set language to ${language}`);
+    }
   };
 
   return (
@@ -56,7 +68,7 @@ const LanguageSelection = () => {
       <div className="flex-1 flex flex-col items-center justify-center p-6">
         <div className="w-full max-w-md bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl p-6 animate-fade-in">
           <h1 className="text-2xl font-bold text-center mb-6 text-heritage-dark">
-            Choose your Language
+            {welcomeText}
           </h1>
           
           <SearchBar 
@@ -73,7 +85,7 @@ const LanguageSelection = () => {
               ))}
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-4 max-h-[400px] overflow-y-auto">
               {filteredLanguages.length > 0 ? (
                 filteredLanguages.map((language) => (
                   <button

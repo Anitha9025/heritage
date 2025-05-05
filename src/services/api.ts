@@ -49,7 +49,7 @@ export async function translateText(text: string, targetLanguage: string) {
   return new Promise((resolve) => {
     setTimeout(() => {
       // Just return the same text for simulation
-      resolve(text);
+      resolve(`${text} (Translated to ${targetLanguage})`);
     }, 500);
   });
 }
@@ -118,11 +118,12 @@ export async function getChatResponse(question: string, siteName: string, langua
 
 // Simulated API for getting supported languages
 export async function getSupportedLanguages() {
-  console.log("Getting supported languages");
+  console.log("Getting supported languages from LANGUAGES dictionary in translate_module.py");
   
   // In a real implementation, this would retrieve available languages from your backend
   return new Promise((resolve) => {
     setTimeout(() => {
+      // Simulating a more comprehensive list of languages from googletrans.LANGUAGES
       resolve([
         { id: "en", name: "English" },
         { id: "ta", name: "Tamil" },
@@ -131,6 +132,63 @@ export async function getSupportedLanguages() {
         { id: "ml", name: "Malayalam" },
         { id: "kn", name: "Kannada" },
         { id: "bn", name: "Bengali" },
+        { id: "fr", name: "French" },
+        { id: "es", name: "Spanish" },
+        { id: "de", name: "German" },
+        { id: "it", name: "Italian" },
+        { id: "pt", name: "Portuguese" },
+        { id: "ru", name: "Russian" },
+        { id: "ja", name: "Japanese" },
+        { id: "ko", name: "Korean" },
+        { id: "zh-cn", name: "Chinese (Simplified)" },
+        { id: "ar", name: "Arabic" },
+        { id: "af", name: "Afrikaans" },
+        { id: "sq", name: "Albanian" },
+        { id: "am", name: "Amharic" },
+        { id: "hy", name: "Armenian" },
+        { id: "az", name: "Azerbaijani" },
+        { id: "eu", name: "Basque" },
+        { id: "be", name: "Belarusian" },
+        { id: "bg", name: "Bulgarian" },
+        { id: "ca", name: "Catalan" },
+        { id: "hr", name: "Croatian" },
+        { id: "cs", name: "Czech" },
+        { id: "da", name: "Danish" },
+        { id: "nl", name: "Dutch" },
+        { id: "et", name: "Estonian" },
+        { id: "fi", name: "Finnish" },
+        { id: "gl", name: "Galician" },
+        { id: "ka", name: "Georgian" },
+        { id: "el", name: "Greek" },
+        { id: "gu", name: "Gujarati" },
+        { id: "he", name: "Hebrew" },
+        { id: "hu", name: "Hungarian" },
+        { id: "is", name: "Icelandic" },
+        { id: "id", name: "Indonesian" },
+        { id: "ga", name: "Irish" },
+        { id: "lv", name: "Latvian" },
+        { id: "lt", name: "Lithuanian" },
+        { id: "mk", name: "Macedonian" },
+        { id: "ms", name: "Malay" },
+        { id: "mt", name: "Maltese" },
+        { id: "mr", name: "Marathi" },
+        { id: "no", name: "Norwegian" },
+        { id: "fa", name: "Persian" },
+        { id: "pl", name: "Polish" },
+        { id: "ro", name: "Romanian" },
+        { id: "sr", name: "Serbian" },
+        { id: "sk", name: "Slovak" },
+        { id: "sl", name: "Slovenian" },
+        { id: "sw", name: "Swahili" },
+        { id: "sv", name: "Swedish" },
+        { id: "tl", name: "Tagalog" },
+        { id: "th", name: "Thai" },
+        { id: "tr", name: "Turkish" },
+        { id: "uk", name: "Ukrainian" },
+        { id: "ur", name: "Urdu" },
+        { id: "vi", name: "Vietnamese" },
+        { id: "cy", name: "Welsh" },
+        { id: "yi", name: "Yiddish" },
       ]);
     }, 300);
   });

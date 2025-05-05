@@ -194,6 +194,75 @@ export async function getSupportedLanguages() {
   });
 }
 
+// NEW: Simulated API for getting heritage sites by place name
+export async function getHeritageSitesByPlace(placeName: string) {
+  console.log(`Searching for heritage sites in ${placeName} using search_module.py`);
+  
+  // Simulate the Python backend's search_module.get_sites_by_place function
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      // Sample data from the provided search_module.py
+      const sitesData: Record<string, string[]> = {
+        "chennai": [
+          "Fort St. George, Rajaji Road, Chennai – 600009",
+          "Government Museum, Pantheon Road, Egmore, Chennai – 600008",
+          "Vivekananda House, Kamarajar Salai, Triplicane, Chennai – 600005",
+          "Kalakshetra Foundation, Kalakshetra Road, Thiruvanmiyur, Chennai – 600041",
+          "Madras High Court, Parry's Corner, Chennai – 600104",
+          "Kapaleeshwarar Temple, Mylapore, Chennai – 600004",
+          "Parthasarathy Temple, Triplicane, Chennai – 600005"
+        ],
+        "madurai": [
+          "Meenakshi Amman Temple, Madurai Main, Madurai – 625001",
+          "Thirumalai Nayakkar Mahal, Panthadi 1st Street, Madurai – 625001",
+          "Gandhi Memorial Museum, Tamukkam, Madurai – 625020",
+          "Alagar Kovil, Alagarkoil Road, Madurai – 625301",
+          "Vandiyur Mariamman Teppakulam, Vandiyur, Madurai – 625020"
+        ],
+        "coimbatore": [
+          "Adiyogi Shiva Statue, Isha Yoga Center, Velliangiri Foothills, Coimbatore – 641114",
+          "Dhyanalinga Temple, Isha Yoga Center, Velliangiri Foothills, Coimbatore – 641114",
+          "Marudhamalai Murugan Temple, Marudhamalai, Coimbatore – 641046",
+          "Perur Pateeswarar Temple, Perur, Coimbatore – 641010",
+          "Eachanari Vinayagar Temple, Eachanari, Coimbatore – 641021"
+        ],
+        "salem": [
+          "Yercaud Hill Station, Yercaud, Salem – 636601",
+          "Mettur Dam, Mettur, Salem – 636401",
+          "1008 Lingam Temple, Ariyanoor, Salem – 636308",
+          "Kalangi Siddhar Temple, Kanja Malai, Salem – 636305",
+          "Kottai Mariamman Temple, Fort, Salem – 636001"
+        ],
+        "trichy": [
+          "Sri Ranganathaswamy Temple, Srirangam, Tiruchirapalli – 620006",
+          "Rockfort Temple, Rockfort Road, Tiruchirapalli – 620002",
+          "Kallanai Dam, Kallanai, Tiruchirapalli – 620105",
+          "St. Lourdes Church, Tiruchirapalli – 620001",
+          "Jambukeswarar Temple, Thiruvanaikaval, Tiruchirapalli – 620005"
+        ]
+      };
+      
+      // Search for exact match first
+      const lowerCasePlaceName = placeName.toLowerCase();
+      if (sitesData[lowerCasePlaceName]) {
+        resolve(sitesData[lowerCasePlaceName]);
+        return;
+      }
+      
+      // Then look for partial matches
+      for (const [key, sites] of Object.entries(sitesData)) {
+        if (key.includes(lowerCasePlaceName) || lowerCasePlaceName.includes(key)) {
+          resolve(sites);
+          return;
+        }
+      }
+      
+      // Return empty array if no matches found
+      resolve([]);
+    }, 800);
+  });
+}
+
 // Function to save selected language to localStorage
 export function saveSelectedLanguage(language: string) {
   localStorage.setItem('selectedLanguage', language);

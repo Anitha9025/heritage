@@ -5,9 +5,9 @@ import { MapPin, MessageCircle, Languages } from "lucide-react";
 import SearchBar from "@/components/SearchBar";
 import FloatingButton from "@/components/FloatingButton";
 import { toast } from "sonner";
-import { getSelectedLanguage } from "@/services/api";
+import { getSelectedLanguage, translateText, getHeritageSitesByPlace } from "@/services/api";
 
-// Default famous heritage sites
+// Default popular heritage sites for initial display
 const defaultHeritageSites = [
   {
     id: "1",
@@ -43,13 +43,42 @@ const Home = () => {
   const [hasSearched, setHasSearched] = useState(false);
   const [displayedSites, setDisplayedSites] = useState(defaultHeritageSites);
   const [selectedLanguage, setSelectedLanguage] = useState("English");
+  const [translatedLabels, setTranslatedLabels] = useState({
+    searchPlaceholder: "Search heritage sites...",
+    discoverHeading: "Discover Heritage",
+    exploringIn: "Exploring in",
+    searchInstructions: "Search for heritage sites to explore",
+    orSelectBelow: "or select from popular sites below",
+    popularSites: "Popular Heritage Sites",
+    featuredSites: "Featured Sites",
+    allSites: "All Heritage Sites",
+    noSitesFound: "No heritage sites found matching",
+    resetSearch: "Reset search"
+  });
   const navigate = useNavigate();
 
   useEffect(() => {
     // Get the user's selected language
     const language = getSelectedLanguage();
     setSelectedLanguage(language);
+    
+    // Translate UI elements based on selected language
+    translateUIElements(language);
   }, []);
+
+  const translateUIElements = async (language: string) => {
+    if (language === "English") return; // No need to translate if English
+    
+    try {
+      const translations = {} as any;
+      for (const [key, value] of Object.entries(translatedLabels)) {
+        translations[key] = await translateText(value, language);
+      }
+      setTranslatedLabels(translations as typeof translatedLabels);
+    } catch (error) {
+      console.error("Error translating UI elements:", error);
+    }
+  };
 
   const handleLanguageButtonClick = () => {
     toast.info("Changing language", {
@@ -58,23 +87,53 @@ const Home = () => {
     navigate("/");
   };
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchTerm.trim()) return;
 
-    // In a real implementation, this would search for heritage sites in the backend
-    // For now, we'll just simulate finding sites
-    toast.success(`Showing results for "${searchTerm}"`, {
-      description: "Found heritage sites matching your search"
-    });
-    
     setHasSearched(true);
     
-    // Just use our default sites for demonstration
-    setDisplayedSites(defaultHeritageSites.filter(site => 
-      site.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      site.location.toLowerCase().includes(searchTerm.toLowerCase())
-    ));
+    try {
+      // Get sites based on search term (place name)
+      const sites = await getHeritageSitesByPlace(searchTerm);
+      
+      if (sites && sites.length > 0) {
+        // Map the returned sites to our site format
+        const formattedSites = sites.map((site: string, index: number) => {
+          // Extract site name and location (assuming format: "Site Name, Location")
+          const parts = site.split(',');
+          const title = parts[0];
+          const location = parts.slice(1).join(',').trim();
+          
+          return {
+            id: `search-${index}`,
+            title,
+            location,
+            description: `Learn more about ${title}`,
+            image: `https://images.unsplash.com/photo-${1470071459604 + index}-3b5ec3a7fe05`,
+            isPopular: index < 2, // First two are marked as popular
+            audioAvailable: true
+          };
+        });
+        
+        setDisplayedSites(formattedSites);
+        
+        toast.success(`Showing results for "${searchTerm}"`, {
+          description: `Found ${formattedSites.length} heritage sites`
+        });
+      } else {
+        setDisplayedSites([]);
+        toast.error(`No sites found for "${searchTerm}"`, {
+          description: "Try another place name"
+        });
+      }
+    } catch (error) {
+      console.error("Error searching for heritage sites:", error);
+      toast.error("Failed to search for heritage sites");
+      
+      // Fallback to default sites
+      setDisplayedSites([]);
+    }
   };
 
   return (
@@ -82,7 +141,7 @@ const Home = () => {
       <div className="sticky top-0 z-10 bg-heritage-primary shadow-md p-4">
         <form onSubmit={handleSearch} className="flex items-center gap-3">
           <SearchBar 
-            placeholder={`Search heritage sites...`} 
+            placeholder={translatedLabels.searchPlaceholder} 
             className="flex-1" 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -106,20 +165,26 @@ const Home = () => {
       </div>
 
       <div className="px-4 pt-6">
-        <h1 className="text-2xl font-bold text-heritage-dark mb-2">Discover Heritage</h1>
-        <p className="text-gray-600 mb-6">Exploring in {selectedLanguage}</p>
+        <h1 className="text-2xl font-bold text-heritage-dark mb-2">
+          {translatedLabels.discoverHeading}
+        </h1>
+        <p className="text-gray-600 mb-6">
+          {translatedLabels.exploringIn} {selectedLanguage}
+        </p>
         
         {!hasSearched && (
           <div className="text-center py-8">
             <div className="mb-6">
               <MapPin size={48} className="mx-auto text-heritage-primary mb-4" />
               <p className="text-gray-600">
-                Search for heritage sites to explore<br />
-                or select from popular sites below
+                {translatedLabels.searchInstructions}<br />
+                {translatedLabels.orSelectBelow}
               </p>
             </div>
             
-            <h2 className="font-semibold text-lg text-heritage-dark mt-8 mb-4">Popular Heritage Sites</h2>
+            <h2 className="font-semibold text-lg text-heritage-dark mt-8 mb-4">
+              {translatedLabels.popularSites}
+            </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {defaultHeritageSites.filter(site => site.isPopular).map((site) => (
                 <Link
@@ -151,7 +216,9 @@ const Home = () => {
           <div className="space-y-6">
             {displayedSites.length > 0 ? (
               <>
-                <h2 className="font-semibold text-lg text-heritage-dark">Featured Sites</h2>
+                <h2 className="font-semibold text-lg text-heritage-dark">
+                  {translatedLabels.featuredSites}
+                </h2>
                 
                 <div className="flex overflow-x-auto pb-4 gap-4 -mx-4 px-4 snap-x">
                   {displayedSites.map((site) => (
@@ -183,7 +250,9 @@ const Home = () => {
                   ))}
                 </div>
                 
-                <h2 className="font-semibold text-lg text-heritage-dark mt-8">All Heritage Sites</h2>
+                <h2 className="font-semibold text-lg text-heritage-dark mt-8">
+                  {translatedLabels.allSites}
+                </h2>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {displayedSites.map((site) => (
@@ -212,7 +281,9 @@ const Home = () => {
               </>
             ) : (
               <div className="text-center py-8">
-                <p className="text-gray-600">No heritage sites found matching "{searchTerm}"</p>
+                <p className="text-gray-600">
+                  {translatedLabels.noSitesFound} "{searchTerm}"
+                </p>
                 <button
                   onClick={() => {
                     setSearchTerm("");
@@ -220,7 +291,7 @@ const Home = () => {
                   }}
                   className="mt-4 text-heritage-primary underline"
                 >
-                  Reset search
+                  {translatedLabels.resetSearch}
                 </button>
               </div>
             )}

@@ -61,6 +61,7 @@ const Home = () => {
   useEffect(() => {
     // Get the user's selected language
     const language = getSelectedLanguage();
+    console.log("Selected language in Home:", language);
     setSelectedLanguage(language);
     
     // Translate UI elements based on selected language
@@ -71,9 +72,11 @@ const Home = () => {
     if (language === "English") return; // No need to translate if English
     
     try {
+      console.log("Translating UI elements to:", language);
       const translations = {} as any;
       for (const [key, value] of Object.entries(translatedLabels)) {
-        translations[key] = await translateText(value, language);
+        const translated = await translateText(value, language);
+        translations[key] = translated;
       }
       setTranslatedLabels(translations as typeof translatedLabels);
     } catch (error) {
@@ -95,15 +98,19 @@ const Home = () => {
     setHasSearched(true);
     
     try {
+      console.log(`Searching for heritage sites in: ${searchTerm}`);
+      
       // Get sites based on search term (place name)
       const sites = await getHeritageSitesByPlace(searchTerm) as string[];
       
       if (sites && sites.length > 0) {
+        console.log(`Found ${sites.length} sites for ${searchTerm}`);
+        
         // Map the returned sites to our site format
         const formattedSites = sites.map((site: string, index: number) => {
           // Extract site name and location (assuming format: "Site Name, Location")
           const parts = site.split(',');
-          const title = parts[0];
+          const title = parts[0].trim();
           const location = parts.slice(1).join(',').trim();
           
           return {
@@ -119,40 +126,45 @@ const Home = () => {
         
         setDisplayedSites(formattedSites);
         
-        const successMessage = selectedLanguage === "English" 
-          ? `Showing results for "${searchTerm}"`
-          : await translateText(`Showing results for "${searchTerm}"`, selectedLanguage);
-          
-        const descriptionMessage = selectedLanguage === "English"
-          ? `Found ${formattedSites.length} heritage sites`
-          : await translateText(`Found ${formattedSites.length} heritage sites`, selectedLanguage);
+        // Translate success message based on selected language
+        let successMessage = `Showing results for "${searchTerm}"`;
+        let descriptionMessage = `Found ${formattedSites.length} heritage sites`;
         
-        toast.success(successMessage as string, {
-          description: descriptionMessage as string
+        if (selectedLanguage !== "English") {
+          successMessage = await translateText(successMessage, selectedLanguage) as string;
+          descriptionMessage = await translateText(descriptionMessage, selectedLanguage) as string;
+        }
+        
+        toast.success(successMessage, {
+          description: descriptionMessage
         });
       } else {
+        console.log(`No sites found for ${searchTerm}`);
         setDisplayedSites([]);
         
-        const errorMessage = selectedLanguage === "English"
-          ? `No sites found for "${searchTerm}"`
-          : await translateText(`No sites found for "${searchTerm}"`, selectedLanguage);
-          
-        const descriptionMessage = selectedLanguage === "English"
-          ? "Try another place name"
-          : await translateText("Try another place name", selectedLanguage);
+        // Translate error message based on selected language
+        let errorMessage = `No sites found for "${searchTerm}"`;
+        let descriptionMessage = "Try another place name";
         
-        toast.error(errorMessage as string, {
-          description: descriptionMessage as string
+        if (selectedLanguage !== "English") {
+          errorMessage = await translateText(errorMessage, selectedLanguage) as string;
+          descriptionMessage = await translateText(descriptionMessage, selectedLanguage) as string;
+        }
+        
+        toast.error(errorMessage, {
+          description: descriptionMessage
         });
       }
     } catch (error) {
       console.error("Error searching for heritage sites:", error);
       
-      const errorMessage = selectedLanguage === "English"
-        ? "Failed to search for heritage sites"
-        : await translateText("Failed to search for heritage sites", selectedLanguage);
+      let errorMessage = "Failed to search for heritage sites";
       
-      toast.error(errorMessage as string);
+      if (selectedLanguage !== "English") {
+        errorMessage = await translateText(errorMessage, selectedLanguage) as string;
+      }
+      
+      toast.error(errorMessage);
       
       // Fallback to default sites
       setDisplayedSites([]);

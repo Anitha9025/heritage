@@ -45,11 +45,66 @@ export async function stopSpeech() {
 export async function translateText(text: string, targetLanguage: string) {
   console.log(`Translating text to ${targetLanguage} using translate_module.py`);
   
+  if (targetLanguage === "English") {
+    return text;
+  }
+  
   // In a real implementation, this would call your Python backend's translate_module.translate_text
   return new Promise((resolve) => {
     setTimeout(() => {
-      // Just return the same text for simulation
-      resolve(`${text} (Translated to ${targetLanguage})`);
+      // For Tamil, simulate actual translation
+      if (targetLanguage === "Tamil") {
+        // Map of common English phrases to Tamil translations
+        const translations: Record<string, string> = {
+          "Choose your Language": "உங்கள் மொழியைத் தேர்ந்தெடுக்கவும்",
+          "Search language...": "மொழியைத் தேடுங்கள்...",
+          "No languages found matching": "பொருந்தும் மொழிகள் எதுவும் கிடைக்கவில்லை",
+          "Language set to Tamil": "மொழி தமிழாக அமைக்கப்பட்டுள்ளது",
+          "The app will now display content in your selected language": "செயலி இப்போது உங்கள் தேர்ந்தெடுக்கப்பட்ட மொழியில் உள்ளடக்கத்தைக் காண்பிக்கும்",
+          "Search heritage sites...": "பாரம்பரிய தளங்களைத் தேடுங்கள்...",
+          "Discover Heritage": "பாரம்பரியத்தைக் கண்டறியுங்கள்",
+          "Exploring in": "ஆராய்கிறது",
+          "Search for heritage sites to explore": "ஆராய வேண்டிய பாரம்பரிய தளங்களைத் தேடுங்கள்",
+          "or select from popular sites below": "அல்லது கீழே உள்ள பிரபலமான தளங்களிலிருந்து தேர்ந்தெடுக்கவும்",
+          "Popular Heritage Sites": "பிரபலமான பாரம்பரிய தளங்கள்",
+          "Featured Sites": "சிறப்பு தளங்கள்",
+          "All Heritage Sites": "அனைத்து பாரம்பரிய தளங்கள்",
+          "No heritage sites found matching": "பொருந்தும் பாரம்பரிய தளங்கள் எதுவும் கிடைக்கவில்லை",
+          "Reset search": "தேடலை மீட்டமைக்கவும்",
+          "Showing heritage sites in": "பாரம்பரிய தளங்களைக் காட்டுகிறது",
+          "Showing results for": "இதற்கான முடிவுகளைக் காட்டுகிறது",
+          "Found": "கண்டுபிடிக்கப்பட்டது",
+          "heritage sites": "பாரம்பரிய தளங்கள்",
+          "No sites found for": "இதற்கான தளங்கள் எதுவும் கிடைக்கவில்லை",
+          "Try another place name": "மற்றொரு இட பெயரை முயற்சிக்கவும்",
+          "Failed to search for heritage sites": "பாரம்பரிய தளங்களைத் தேட முடியவில்லை",
+          "Popular": "பிரபலமானது",
+          "Learn more about": "இதைப் பற்றி மேலும் அறிக",
+          "Changing language": "மொழியை மாற்றுகிறது",
+          "Redirecting to language selection screen": "மொழி தேர்வு திரைக்கு திருப்பி விடப்படுகிறது"
+        };
+        
+        // Check if exact match exists
+        if (translations[text]) {
+          resolve(translations[text]);
+          return;
+        }
+        
+        // Check for partial matches
+        for (const [key, value] of Object.entries(translations)) {
+          if (text.includes(key)) {
+            const translated = text.replace(key, value);
+            resolve(translated);
+            return;
+          }
+        }
+        
+        // Fallback for no matches
+        resolve(`${text} (தமிழில்)`);
+      } else {
+        // For other languages, just add a suffix indicating translation
+        resolve(`${text} (Translated to ${targetLanguage})`);
+      }
     }, 500);
   });
 }
@@ -194,8 +249,8 @@ export async function getSupportedLanguages() {
   });
 }
 
-// NEW: Simulated API for getting heritage sites by place name
-export async function getHeritageSitesByPlace(placeName: string) {
+// Simulated API for getting heritage sites by place name
+export async function getHeritageSitesByPlace(placeName: string): Promise<string[]> {
   console.log(`Searching for heritage sites in ${placeName} using search_module.py`);
   
   // Simulate the Python backend's search_module.get_sites_by_place function
@@ -239,11 +294,53 @@ export async function getHeritageSitesByPlace(placeName: string) {
           "Kallanai Dam, Kallanai, Tiruchirapalli – 620105",
           "St. Lourdes Church, Tiruchirapalli – 620001",
           "Jambukeswarar Temple, Thiruvanaikaval, Tiruchirapalli – 620005"
+        ],
+        "ariyalur": [
+          "Gangaikonda Cholapuram, Jayankondam, Ariyalur – 621802",
+          "Karaivetti Bird Sanctuary, Karaivetti, Ariyalur – 621851",
+          "Thirumazhapadi Vaidyanathaswami Temple, Thirumazhapadi, Ariyalur – 621851",
+          "Kaliyuga Varadaraja Perumal Temple, Kallankurichi, Ariyalur – 621705",
+          "Meenatchi Sundareswarar Temple, Melapaluvur, Ariyalur – 621707"
+        ],
+        "chengalpattu": [
+          "Vedanthangal Bird Sanctuary, Vedanthangal, Chengalpattu – 603314",
+          "Arignar Anna Zoological Park, Vandalur, Chennai – 600048",
+          "Kandhaswamy Temple, Thiruporur, Chengalpattu – 603110",
+          "Vedagiriswarar Temple, Thirukalukundram, Chengalpattu – 603109",
+          "Nityakalyana Perumal Temple, Thiruvidanthai, Chengalpattu – 603112"
+        ],
+        "dindigul": [
+          "Dindigul Fort, Fort Road, Dindigul – 624001",
+          "Arulmigu Dhandayuthapani Swamy Temple, Palani Hills, Palani – 624601",
+          "Soundararaja Perumal Temple, Thadikombu, Dindigul – 624005",
+          "Abirami Amman Temple, Rock Fort, Dindigul – 624001",
+          "Sirumalai Hills, Sirumalai, Dindigul – 624003"
+        ],
+        "erode": [
+          "Thindal Murugan Temple, Thindal, Erode – 638012",
+          "Sangameswarar Temple, Bhavani, Erode – 638301",
+          "Chennimalai Murugan Temple, Chennimalai, Erode – 638051",
+          "Bannari Amman Temple, Bannari, Sathyamangalam, Erode – 638401",
+          "Magudeswarar Temple, Kodumudi, Erode – 638151"
+        ],
+        "kancheepuram": [
+          "Kailasanathar Temple, Pillaiyarpalayam, Kanchipuram – 631501",
+          "Ekambareswarar Temple, Ekambaranathar Sannathi Street, Periya Kanchipuram, Kanchipuram – 631502",
+          "Kamakshi Amman Temple, Kamakshi Amman Sannathi Street, Periya Kanchipuram, Kanchipuram – 631502",
+          "Varadharaja Perumal Temple, Vishnu Kanchi, Kanchipuram – 631501",
+          "Ulagalantha Perumal Temple, Big Kanchipuram, Kanchipuram – 631502"
+        ],
+        "thanjavur": [
+          "Brihadeeswarar Temple, South Bank Road, Thanjavur – 613007",
+          "Thanjavur Maratha Palace, Thanjavur – 613001",
+          "Saraswathi Mahal Library, Thanjavur – 613001",
+          "Sivaganga Park, Thanjavur – 613007",
+          "Rajaraja Chola Art Gallery, Thanjavur – 613007"
         ]
       };
       
       // Search for exact match first
-      const lowerCasePlaceName = placeName.toLowerCase();
+      const lowerCasePlaceName = placeName.toLowerCase().trim();
       if (sitesData[lowerCasePlaceName]) {
         resolve(sitesData[lowerCasePlaceName]);
         return;
@@ -266,10 +363,13 @@ export async function getHeritageSitesByPlace(placeName: string) {
 // Function to save selected language to localStorage
 export function saveSelectedLanguage(language: string) {
   localStorage.setItem('selectedLanguage', language);
+  console.log(`Language saved to localStorage: ${language}`);
   return { success: true };
 }
 
 // Function to get selected language from localStorage
 export function getSelectedLanguage(): string {
-  return localStorage.getItem('selectedLanguage') || 'English';
+  const lang = localStorage.getItem('selectedLanguage') || 'English';
+  console.log(`Retrieved language from localStorage: ${lang}`);
+  return lang;
 }

@@ -52,11 +52,15 @@ const LanguageSelection = () => {
         description: translatedDescription as string
       });
       
-      // Force page reload to apply language changes globally before navigation
-      // This ensures all components will pick up the new language
+      // Apply language changes before navigation by forcing a reload
+      window.localStorage.setItem('selectedLanguage', language);
+      
+      // Short delay to ensure localStorage is updated before navigation
       setTimeout(() => {
         navigate("/home");
-      }, 500);
+        // Force reload after navigation to apply changes system-wide
+        window.location.reload();
+      }, 300);
     } catch (error) {
       console.error("Error selecting language:", error);
       toast.error(`Failed to set language to ${language}`);

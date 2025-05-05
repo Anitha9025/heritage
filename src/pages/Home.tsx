@@ -95,7 +95,7 @@ const Home = () => {
     
     try {
       // Get sites based on search term (place name)
-      const sites = await getHeritageSitesByPlace(searchTerm);
+      const sites = await getHeritageSitesByPlace(searchTerm) as string[];
       
       if (sites && sites.length > 0) {
         // Map the returned sites to our site format

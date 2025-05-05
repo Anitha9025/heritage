@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Send } from "lucide-react";
 import BackButton from "@/components/BackButton";
-import { getChatResponse, getSelectedLanguage } from "@/services/api";
+import { getChatResponse, getSelectedLanguage, translateText } from "@/services/api";
 import { toast } from "sonner";
 
 interface Site {
@@ -34,6 +34,13 @@ const Chatbot = () => {
   const [input, setInput] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState("English");
+  const [translatedLabels, setTranslatedLabels] = useState({
+    chatTitle: "AI Chat",
+    inputPlaceholder: "Ask me about this heritage site...",
+    aiThinking: "AI is thinking...",
+    failedResponse: "Failed to get response from AI",
+    errorMessage: "Sorry, I'm having trouble responding right now. Please try again later."
+  });
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Scroll to bottom of chat whenever messages change
@@ -50,17 +57,47 @@ const Chatbot = () => {
     const language = getSelectedLanguage();
     setSelectedLanguage(language);
     
-    // Add welcome message
+    if (language !== "English") {
+      translateUIElements(language);
+    }
+    
+    // Add welcome message (will be translated by getChatResponse)
+    addWelcomeMessage(language);
+  }, [site]);
+
+  const translateUIElements = async (language: string) => {
+    try {
+      const translations = {} as any;
+      for (const [key, value] of Object.entries(translatedLabels)) {
+        const translated = await translateText(value, language);
+        translations[key] = translated;
+      }
+      setTranslatedLabels(translations as typeof translatedLabels);
+    } catch (error) {
+      console.error("Error translating UI elements:", error);
+    }
+  };
+
+  const addWelcomeMessage = async (language: string) => {
+    // Construct welcome message
+    let welcomeText = `Welcome to the heritage AI chat. I can answer questions about ${site?.title || "heritage sites"}. What would you like to know?`;
+    
+    // Translate if not English
+    if (language !== "English") {
+      welcomeText = await translateText(welcomeText, language) as string;
+    }
+
     const welcomeMsg: Message = {
       id: "welcome",
       sender: "bot",
-      text: `Welcome to the heritage AI chat. I can answer questions about ${site?.title || "heritage sites"}. What would you like to know?`,
+      text: welcomeText,
       timestamp: new Date()
     };
+    
     setMessages([welcomeMsg]);
-  }, [site]);
+  };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!input.trim() || isProcessing) return;
@@ -79,41 +116,43 @@ const Chatbot = () => {
     setInput("");
     
     // Call the chatbot API
-    getChatResponse(userQuestion, site?.title || "heritage site", selectedLanguage)
-      .then((response: any) => {
-        const botMsg: Message = {
-          id: (Date.now() + 1).toString(),
-          sender: "bot",
-          text: response,
-          timestamp: new Date()
-        };
-        
-        setMessages(prev => [...prev, botMsg]);
-      })
-      .catch(error => {
-        console.error("Error getting chat response:", error);
-        toast.error("Failed to get response from AI");
-        
-        // Add error message
-        const errorMsg: Message = {
-          id: (Date.now() + 1).toString(),
-          sender: "bot",
-          text: "Sorry, I'm having trouble responding right now. Please try again later.",
-          timestamp: new Date()
-        };
-        
-        setMessages(prev => [...prev, errorMsg]);
-      })
-      .finally(() => {
-        setIsProcessing(false);
-      });
+    try {
+      const response = await getChatResponse(userQuestion, site?.title || "heritage site", selectedLanguage);
+      
+      const botMsg: Message = {
+        id: (Date.now() + 1).toString(),
+        sender: "bot",
+        text: response as string,
+        timestamp: new Date()
+      };
+      
+      setMessages(prev => [...prev, botMsg]);
+    } catch (error) {
+      console.error("Error getting chat response:", error);
+      
+      let errorMessage = translatedLabels.errorMessage;
+      
+      toast.error(translatedLabels.failedResponse);
+      
+      // Add error message
+      const errorMsg: Message = {
+        id: (Date.now() + 1).toString(),
+        sender: "bot",
+        text: errorMessage,
+        timestamp: new Date()
+      };
+      
+      setMessages(prev => [...prev, errorMsg]);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <div className="bg-heritage-primary p-4 flex items-center shadow-sm">
         <BackButton className="mr-3" />
-        <h1 className="text-xl font-bold text-white">AI Chat</h1>
+        <h1 className="text-xl font-bold text-white">{translatedLabels.chatTitle}</h1>
         {site && <span className="ml-2 text-white/80 text-sm">- {site.title}</span>}
       </div>
       
@@ -155,7 +194,7 @@ const Chatbot = () => {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask me about this heritage site..."
+            placeholder={translatedLabels.inputPlaceholder}
             className="flex-1 py-3 px-4 rounded-full border border-gray-300 focus:outline-none focus:border-heritage-primary"
             disabled={isProcessing}
           />
@@ -172,7 +211,7 @@ const Chatbot = () => {
           </button>
         </div>
         {isProcessing && (
-          <p className="text-center text-xs text-gray-500 mt-2">AI is thinking...</p>
+          <p className="text-center text-xs text-gray-500 mt-2">{translatedLabels.aiThinking}</p>
         )}
       </form>
     </div>

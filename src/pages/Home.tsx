@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { MapPin, MessageCircle, Languages } from "lucide-react";
@@ -38,10 +37,20 @@ const defaultHeritageSites = [
   }
 ];
 
+interface HeritageSite {
+  id: string;
+  title: string;
+  location: string;
+  description: string;
+  image: string;
+  isPopular: boolean;
+  audioAvailable: boolean;
+}
+
 const Home = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [hasSearched, setHasSearched] = useState(false);
-  const [displayedSites, setDisplayedSites] = useState(defaultHeritageSites);
+  const [displayedSites, setDisplayedSites] = useState<HeritageSite[]>(defaultHeritageSites);
   const [selectedLanguage, setSelectedLanguage] = useState("English");
   const [translatedLabels, setTranslatedLabels] = useState({
     searchPlaceholder: "Search heritage sites...",
@@ -65,12 +74,12 @@ const Home = () => {
     setSelectedLanguage(language);
     
     // Translate UI elements based on selected language
-    translateUIElements(language);
+    if (language !== "English") {
+      translateUIElements(language);
+    }
   }, []);
 
   const translateUIElements = async (language: string) => {
-    if (language === "English") return; // No need to translate if English
-    
     try {
       console.log("Translating UI elements to:", language);
       const translations = {} as any;
@@ -101,7 +110,8 @@ const Home = () => {
       console.log(`Searching for heritage sites in: ${searchTerm}`);
       
       // Get sites based on search term (place name)
-      const sites = await getHeritageSitesByPlace(searchTerm) as string[];
+      const sitesResponse = await getHeritageSitesByPlace(searchTerm);
+      const sites = sitesResponse as string[];
       
       if (sites && sites.length > 0) {
         console.log(`Found ${sites.length} sites for ${searchTerm}`);
@@ -118,7 +128,7 @@ const Home = () => {
             title,
             location,
             description: `Learn more about ${title}`,
-            image: `https://images.unsplash.com/photo-${1470071459604 + index}-3b5ec3a7fe05`,
+            image: `https://images.unsplash.com/photo-${1470071459604 + index * 10}-3b5ec3a7fe05`,
             isPopular: index < 2, // First two are marked as popular
             audioAvailable: true
           };

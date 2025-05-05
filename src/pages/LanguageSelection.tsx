@@ -52,13 +52,12 @@ const LanguageSelection = () => {
         description: translatedDescription as string
       });
       
-      // Apply language changes before navigation by forcing a reload
-      window.localStorage.setItem('selectedLanguage', language);
+      // Ensure language is saved before navigating
+      localStorage.setItem('selectedLanguage', language);
       
-      // Short delay to ensure localStorage is updated before navigation
+      // Force a full page reload to ensure language changes are applied everywhere
       setTimeout(() => {
         navigate("/home");
-        // Force reload after navigation to apply changes system-wide
         window.location.reload();
       }, 300);
     } catch (error) {

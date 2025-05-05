@@ -3,7 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { Speaker, MessageCircle, MapPin } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { getHeritageSiteInfo, speakText, stopSpeech, getSelectedLanguage } from "@/services/api";
+import { getHeritageSiteInfo, speakText, stopSpeech, getSelectedLanguage, translateText } from "@/services/api";
 import BackButton from "@/components/BackButton";
 import FloatingButton from "@/components/FloatingButton";
 
@@ -46,11 +46,23 @@ const SiteInfo = () => {
   const [siteDescription, setSiteDescription] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [selectedLanguage, setSelectedLanguage] = useState("English");
-  
+  const [translatedLabels, setTranslatedLabels] = useState({
+    aboutSite: "About this site",
+    openingHours: "Opening Hours",
+    weekdays: "Monday - Friday",
+    weekends: "Saturday & Sunday",
+    siteNotFound: "Site Not Found",
+    returnToHome: "Return to Home"
+  });
+
   useEffect(() => {
     // Get the user's selected language
     const language = getSelectedLanguage();
     setSelectedLanguage(language);
+    
+    if (language !== "English") {
+      translateUIElements(language);
+    }
     
     // Set initial site data from our default sites
     if (id && defaultSites[id]) {
@@ -75,13 +87,26 @@ const SiteInfo = () => {
     }
   }, [id, selectedLanguage]);
   
+  const translateUIElements = async (language: string) => {
+    try {
+      const translations = {} as any;
+      for (const [key, value] of Object.entries(translatedLabels)) {
+        const translated = await translateText(value, language);
+        translations[key] = translated;
+      }
+      setTranslatedLabels(translations as typeof translatedLabels);
+    } catch (error) {
+      console.error("Error translating UI elements:", error);
+    }
+  };
+  
   if (!site) {
     return (
       <div className="min-h-screen flex justify-center items-center p-4">
         <div className="text-center">
-          <h1 className="text-xl font-bold mb-2">Site Not Found</h1>
+          <h1 className="text-xl font-bold mb-2">{translatedLabels.siteNotFound}</h1>
           <Link to="/home" className="text-heritage-primary underline">
-            Return to Home
+            {translatedLabels.returnToHome}
           </Link>
         </div>
       </div>
@@ -145,7 +170,7 @@ const SiteInfo = () => {
         </div>
         
         <div className="bg-white rounded-xl p-5 shadow-sm mb-6">
-          <h2 className="text-lg font-semibold mb-3 text-heritage-dark">About this site</h2>
+          <h2 className="text-lg font-semibold mb-3 text-heritage-dark">{translatedLabels.aboutSite}</h2>
           {isLoading ? (
             <div className="animate-pulse h-24 bg-gray-100 rounded"></div>
           ) : (
@@ -154,14 +179,14 @@ const SiteInfo = () => {
         </div>
         
         <div className="bg-white rounded-xl p-5 shadow-sm mb-20">
-          <h2 className="text-lg font-semibold mb-3 text-heritage-dark">Opening Hours</h2>
+          <h2 className="text-lg font-semibold mb-3 text-heritage-dark">{translatedLabels.openingHours}</h2>
           <div className="space-y-2">
             <div className="flex justify-between">
-              <span className="text-gray-600">Monday - Friday</span>
+              <span className="text-gray-600">{translatedLabels.weekdays}</span>
               <span className="font-medium">9:00 AM - 6:00 PM</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">Saturday & Sunday</span>
+              <span className="text-gray-600">{translatedLabels.weekends}</span>
               <span className="font-medium">10:00 AM - 4:00 PM</span>
             </div>
           </div>

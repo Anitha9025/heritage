@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { MapPin, Search } from "lucide-react";
 import BackButton from "@/components/BackButton";
-import { getCoordinates } from "@/services/api";
+import { getCoordinates, getSelectedLanguage, translateText } from "@/services/api";
 import { toast } from "sonner";
 import { useLocation } from "react-router-dom";
 
@@ -10,10 +10,30 @@ const MapSearch = () => {
   const [searchValue, setSearchValue] = useState("");
   const [coordinates, setCoordinates] = useState<{latitude: number, longitude: number} | null>(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState("English");
+  const [translatedLabels, setTranslatedLabels] = useState({
+    searchPlaceholder: "Search heritage sites",
+    findHeritageSite: "Find a Heritage Site",
+    inputPlaceholder: "Enter site name or location",
+    searching: "Searching...",
+    search: "Search",
+    nearbySites: "Nearby Sites",
+    interactiveMapView: "Interactive Map View",
+    searchingLocation: "Searching for location...",
+    showing: "Showing"
+  });
   const location = useLocation();
   
-  // Parse the query parameter to get the site name from the URL
   useEffect(() => {
+    // Get the user's selected language
+    const language = getSelectedLanguage();
+    setSelectedLanguage(language);
+    
+    if (language !== "English") {
+      translateUIElements(language);
+    }
+    
+    // Parse the query parameter to get the site name from the URL
     const params = new URLSearchParams(location.search);
     const site = params.get('site');
     
@@ -23,7 +43,20 @@ const MapSearch = () => {
     }
   }, [location]);
   
-  const handleSearch = (e: React.FormEvent | null, siteName?: string) => {
+  const translateUIElements = async (language: string) => {
+    try {
+      const translations = {} as any;
+      for (const [key, value] of Object.entries(translatedLabels)) {
+        const translated = await translateText(value, language);
+        translations[key] = translated;
+      }
+      setTranslatedLabels(translations as typeof translatedLabels);
+    } catch (error) {
+      console.error("Error translating UI elements:", error);
+    }
+  };
+  
+  const handleSearch = async (e: React.FormEvent | null, siteName?: string) => {
     if (e) e.preventDefault();
     
     const searchSite = siteName || searchValue;
@@ -31,21 +64,37 @@ const MapSearch = () => {
     
     setIsSearching(true);
     
-    // Call our simulated API using location_module.py
-    getCoordinates(searchSite)
-      .then((coords: any) => {
-        setCoordinates(coords);
-        toast.success(`Found location for ${searchSite}`, {
-          description: `Coordinates: ${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)}`
-        });
-      })
-      .catch(error => {
-        console.error("Error getting coordinates:", error);
-        toast.error(`Could not find location for ${searchSite}`);
-      })
-      .finally(() => {
-        setIsSearching(false);
+    try {
+      // Call our simulated API using location_module.py
+      const coords = await getCoordinates(searchSite);
+      setCoordinates(coords as {latitude: number, longitude: number});
+      
+      // Create and translate success message
+      let successMessage = `Found location for ${searchSite}`;
+      let descriptionMessage = `Coordinates: ${(coords as any).latitude.toFixed(4)}, ${(coords as any).longitude.toFixed(4)}`;
+      
+      if (selectedLanguage !== "English") {
+        successMessage = await translateText(successMessage, selectedLanguage) as string;
+        descriptionMessage = await translateText(descriptionMessage, selectedLanguage) as string;
+      }
+      
+      toast.success(successMessage, {
+        description: descriptionMessage
       });
+    } catch (error) {
+      console.error("Error getting coordinates:", error);
+      
+      // Create and translate error message
+      let errorMessage = `Could not find location for ${searchSite}`;
+      
+      if (selectedLanguage !== "English") {
+        errorMessage = await translateText(errorMessage, selectedLanguage) as string;
+      }
+      
+      toast.error(errorMessage);
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   return (
@@ -54,8 +103,8 @@ const MapSearch = () => {
         {/* This would be a real map in a production app using your map_module.py */}
         <div className="absolute inset-0 bg-gray-300 flex items-center justify-center">
           <div className="text-heritage-dark text-lg font-medium">
-            {isSearching ? "Searching for location..." : 
-             coordinates ? `Showing: ${searchValue}` : "Interactive Map View"}
+            {isSearching ? translatedLabels.searchingLocation : 
+             coordinates ? `${translatedLabels.showing}: ${searchValue}` : translatedLabels.interactiveMapView}
           </div>
           
           {coordinates && (
@@ -90,7 +139,7 @@ const MapSearch = () => {
                 type="text"
                 value={searchValue}
                 onChange={(e) => setSearchValue(e.target.value)}
-                placeholder="Search heritage sites"
+                placeholder={translatedLabels.searchPlaceholder}
                 className="flex-1 outline-none text-sm"
               />
             </div>
@@ -102,13 +151,13 @@ const MapSearch = () => {
         <form onSubmit={(e) => handleSearch(e)}>
           <div className="mb-4">
             <label className="block text-gray-700 font-medium mb-2">
-              Find a Heritage Site
+              {translatedLabels.findHeritageSite}
             </label>
             <input
               type="text"
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}
-              placeholder="Enter site name or location"
+              placeholder={translatedLabels.inputPlaceholder}
               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-heritage-primary"
             />
           </div>
@@ -118,12 +167,12 @@ const MapSearch = () => {
             disabled={isSearching || !searchValue.trim()}
             className={`w-full ${isSearching || !searchValue.trim() ? 'bg-gray-400' : 'bg-heritage-primary hover:bg-blue-600'} text-white font-medium py-3 rounded-lg transition-colors`}
           >
-            {isSearching ? "Searching..." : "Search"}
+            {isSearching ? translatedLabels.searching : translatedLabels.search}
           </button>
         </form>
         
         <div className="mt-6">
-          <h3 className="font-medium text-gray-700 mb-3">Nearby Sites</h3>
+          <h3 className="font-medium text-gray-700 mb-3">{translatedLabels.nearbySites}</h3>
           <div className="space-y-2">
             {["Fort St. George", "Kapaleeshwarar Temple", "Mahabalipuram"].map((site, index) => (
               <div 

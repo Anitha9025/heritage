@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Send } from "lucide-react";
@@ -7,6 +6,7 @@ import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 import TranslationWrapper from "@/components/TranslationWrapper";
 import { createChatMessage } from "@/services/apiService";
+import { getFontClassForLanguage } from "@/utils/languageUtils";
 
 interface Site {
   id: string;
@@ -171,7 +171,7 @@ const Chatbot = () => {
                       message.sender === "user" 
                         ? "bg-heritage-primary text-white rounded-tr-none" 
                         : "bg-gray-100 text-gray-800 rounded-tl-none"
-                    }`}
+                    } ${message.sender === "bot" ? getFontClassForLanguage(language) : ""}`}
                   >
                     <p>{message.text}</p>
                     {message.image && (
@@ -198,7 +198,7 @@ const Chatbot = () => {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder={translatedLabels.inputPlaceholder}
-                className="flex-1 py-3 px-4 rounded-full border border-gray-300 focus:outline-none focus:border-heritage-primary"
+                className={`flex-1 py-3 px-4 rounded-full border border-gray-300 focus:outline-none focus:border-heritage-primary ${getFontClassForLanguage(language)}`}
                 disabled={isProcessing}
               />
               <button 
@@ -214,7 +214,9 @@ const Chatbot = () => {
               </button>
             </div>
             {isProcessing && (
-              <p className="text-center text-xs text-gray-500 mt-2">{translatedLabels.aiThinking}</p>
+              <p className={`text-center text-xs text-gray-500 mt-2 ${getFontClassForLanguage(language)}`}>
+                {translatedLabels.aiThinking}
+              </p>
             )}
           </form>
         </div>

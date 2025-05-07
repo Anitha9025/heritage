@@ -1,5 +1,11 @@
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Tamil:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Telugu:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Malayalam:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Kannada:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -45,6 +51,14 @@
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    --font-sans: 'Inter', 'Noto Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --font-tamil: 'Noto Sans Tamil', var(--font-sans);
+    --font-hindi: 'Noto Sans Devanagari', var(--font-sans);
+    --font-bengali: 'Noto Sans Bengali', var(--font-sans);
+    --font-telugu: 'Noto Sans Telugu', var(--font-sans);
+    --font-malayalam: 'Noto Sans Malayalam', var(--font-sans);
+    --font-kannada: 'Noto Sans Kannada', var(--font-sans);
   }
 
   .dark {
@@ -94,6 +108,9 @@
 
   body {
     @apply bg-background text-foreground font-['Inter',sans-serif];
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   .card-shadow {
@@ -103,4 +120,36 @@
   .site-card {
     @apply transition-transform duration-200 hover:scale-[1.02];
   }
+}
+
+/* Language-specific font classes */
+.font-tamil {
+  font-family: var(--font-tamil);
+}
+
+.font-hindi {
+  font-family: var(--font-hindi);
+}
+
+.font-bengali {
+  font-family: var(--font-bengali);
+}
+
+.font-telugu {
+  font-family: var(--font-telugu);
+}
+
+.font-malayalam {
+  font-family: var(--font-malayalam);
+}
+
+.font-kannada {
+  font-family: var(--font-kannada);
+}
+
+/* Ensure proper text rendering for all languages */
+* {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }

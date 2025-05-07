@@ -1,0 +1,7 @@
+# requirements.txt
+
+langchain
+langchain-community
+langchain-core
+ollama==0.4.7
+deep-translator

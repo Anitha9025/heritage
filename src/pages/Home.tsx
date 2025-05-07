@@ -1,13 +1,16 @@
 
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { MapPin, MessageCircle, Languages } from "lucide-react";
+import { MapPin, MessageCircle, Languages, Mic } from "lucide-react";
 import SearchBar from "@/components/SearchBar";
 import FloatingButton from "@/components/FloatingButton";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 import TranslationWrapper from "@/components/TranslationWrapper";
 import { fetchHeritageSitesByPlace, HeritageSite } from "@/services/apiService";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 // Default popular heritage sites for initial display
 const defaultHeritageSites = [
@@ -40,10 +43,27 @@ const defaultHeritageSites = [
   }
 ];
 
+// List of districts in Tamil Nadu for the dropdown
+const districts = [
+  "All Districts",
+  "Chennai",
+  "Coimbatore",
+  "Madurai",
+  "Tiruchirappalli",
+  "Salem",
+  "Tirunelveli",
+  "Thoothukudi",
+  "Tiruppur",
+  "Erode",
+  "Vellore"
+];
+
 const Home = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [hasSearched, setHasSearched] = useState(false);
   const [displayedSites, setDisplayedSites] = useState<HeritageSite[]>(defaultHeritageSites);
+  const [selectedDistrict, setSelectedDistrict] = useState("All Districts");
+  const [isListening, setIsListening] = useState(false);
   const { language, translate } = useLanguage();
   const navigate = useNavigate();
 
@@ -58,7 +78,13 @@ const Home = () => {
     allSites: "All Heritage Sites", 
     noSitesFound: "No heritage sites found matching",
     resetSearch: "Reset search",
-    searchingFor: "Showing heritage sites in"
+    searchingFor: "Showing heritage sites in",
+    selectDistrict: "Select District",
+    aboutUsTitle: "About Heritage Guide",
+    aboutUsContent: "We are dedicated to showcasing the rich cultural heritage of India, focusing on historical and archaeological sites. Our mission is to preserve these treasures through digital documentation and make them accessible to everyone in their preferred language.",
+    exploreMore: "Explore More",
+    startVoiceSearch: "Start voice search",
+    stopVoiceSearch: "Stop listening"
   };
 
   const handleLanguageButtonClick = () => {
@@ -77,10 +103,10 @@ const Home = () => {
     setHasSearched(true);
     
     try {
-      console.log(`Searching for heritage sites in: ${searchTerm}`);
+      console.log(`Searching for heritage sites in: ${searchTerm}, district: ${selectedDistrict}`);
       
-      // Get sites based on search term (place name) using our flexible API service
-      const response = await fetchHeritageSitesByPlace(searchTerm);
+      // Get sites based on search term (place name) and selected district using our flexible API service
+      const response = await fetchHeritageSitesByPlace(searchTerm, selectedDistrict !== "All Districts" ? selectedDistrict : undefined);
       
       if (response.success && response.data && response.data.length > 0) {
         console.log(`Found ${response.data.length} sites for ${searchTerm}`);
@@ -117,34 +143,141 @@ const Home = () => {
     }
   };
 
+  const handleDistrictChange = async (value: string) => {
+    setSelectedDistrict(value);
+    
+    if (searchTerm) {
+      // If there's already a search term, re-run the search with the new district
+      try {
+        const response = await fetchHeritageSitesByPlace(searchTerm, value !== "All Districts" ? value : undefined);
+        
+        if (response.success && response.data && response.data.length > 0) {
+          setDisplayedSites(response.data);
+          
+          const successMessage = await translate(`Showing results for "${searchTerm}" in ${value}`);
+          toast.success(successMessage);
+        } else {
+          setDisplayedSites([]);
+          
+          const errorMessage = await translate(`No sites found for "${searchTerm}" in ${value}`);
+          toast.error(errorMessage);
+        }
+      } catch (error) {
+        console.error("Error filtering by district:", error);
+      }
+    }
+  };
+
+  const startVoiceRecognition = () => {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      toast.error("Speech recognition is not supported in your browser");
+      return;
+    }
+
+    setIsListening(true);
+    
+    // Initialize speech recognition
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    
+    recognition.lang = language === 'English' ? 'en-US' : getLanguageCode(language);
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      setSearchTerm(transcript);
+      
+      // Automatically submit the form after getting speech input
+      setTimeout(() => {
+        const form = document.getElementById("search-form");
+        if (form) {
+          form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+        }
+      }, 500);
+    };
+    
+    recognition.onerror = (event) => {
+      console.error('Speech recognition error', event.error);
+      setIsListening(false);
+      toast.error(`Voice recognition error: ${event.error}`);
+    };
+    
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+    
+    recognition.start();
+    toast.info("Listening... Speak now");
+  };
+
+  function getLanguageCode(language: string): string {
+    const languageCodeMap: Record<string, string> = {
+      'English': 'en-US',
+      'Tamil': 'ta-IN',
+      'Hindi': 'hi-IN',
+      'Bengali': 'bn-IN',
+      'Telugu': 'te-IN',
+      'Malayalam': 'ml-IN',
+      'Kannada': 'kn-IN'
+    };
+  
+    return languageCodeMap[language] || 'en-US';
+  }
+
   return (
     <TranslationWrapper
       textContent={labels}
       render={(translatedLabels) => (
         <div className="min-h-screen bg-gray-50 pb-20">
+          {/* Top Bar */}
           <div className="sticky top-0 z-10 bg-heritage-primary shadow-md p-4">
-            <form onSubmit={handleSearch} className="flex items-center gap-3">
-              <SearchBar 
-                placeholder={translatedLabels.searchPlaceholder} 
-                className="flex-1" 
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-              <button 
-                type="submit"
-                className="p-2 bg-white rounded-full shadow-sm hover:bg-gray-100 transition-colors"
-                aria-label="Search"
-              >
-                <MapPin size={20} className="text-heritage-primary" />
-              </button>
-              <button 
-                type="button"
-                className="p-2 bg-white rounded-full shadow-sm hover:bg-gray-100 transition-colors"
-                onClick={handleLanguageButtonClick}
-                aria-label="Change language"
-              >
-                <Languages size={20} className="text-heritage-primary" />
-              </button>
+            <form id="search-form" onSubmit={handleSearch} className="flex flex-col gap-3">
+              <div className="flex items-center gap-3">
+                <SearchBar 
+                  placeholder={translatedLabels.searchPlaceholder} 
+                  className="flex-1" 
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                <button 
+                  type="button"
+                  className={`p-2 ${isListening ? 'bg-red-500' : 'bg-white'} rounded-full shadow-sm hover:bg-gray-100 transition-colors`}
+                  onClick={startVoiceRecognition}
+                  aria-label={isListening ? translatedLabels.stopVoiceSearch : translatedLabels.startVoiceSearch}
+                >
+                  <Mic size={20} className={`${isListening ? 'text-white' : 'text-heritage-primary'} animate-pulse`} />
+                </button>
+                <button 
+                  type="submit"
+                  className="p-2 bg-white rounded-full shadow-sm hover:bg-gray-100 transition-colors"
+                  aria-label="Search"
+                >
+                  <MapPin size={20} className="text-heritage-primary" />
+                </button>
+                <button 
+                  type="button"
+                  className="p-2 bg-white rounded-full shadow-sm hover:bg-gray-100 transition-colors"
+                  onClick={handleLanguageButtonClick}
+                  aria-label="Change language"
+                >
+                  <Languages size={20} className="text-heritage-primary" />
+                </button>
+              </div>
+              
+              {/* District Dropdown */}
+              <div className="w-full">
+                <Select onValueChange={handleDistrictChange} value={selectedDistrict}>
+                  <SelectTrigger className="w-full bg-white">
+                    <SelectValue placeholder={translatedLabels.selectDistrict} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {districts.map((district) => (
+                      <SelectItem key={district} value={district}>{district}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </form>
           </div>
 
@@ -193,6 +326,20 @@ const Home = () => {
                     </Link>
                   ))}
                 </div>
+
+                {/* About Us Section */}
+                <Card className="mt-12 mb-4">
+                  <CardContent className="p-6">
+                    <h2 className="text-xl font-bold mb-4">{translatedLabels.aboutUsTitle}</h2>
+                    <p className="text-gray-600 mb-4">{translatedLabels.aboutUsContent}</p>
+                    <Button 
+                      onClick={() => window.open("https://goverment-tourism.org", "_blank")}
+                      className="bg-heritage-primary hover:bg-heritage-primary/90"
+                    >
+                      {translatedLabels.exploreMore}
+                    </Button>
+                  </CardContent>
+                </Card>
               </div>
             )}
             
@@ -201,7 +348,9 @@ const Home = () => {
                 {displayedSites.length > 0 ? (
                   <>
                     <h2 className="font-semibold text-lg text-heritage-dark">
-                      {translatedLabels.searchingFor} "{searchTerm}"
+                      {selectedDistrict !== "All Districts" 
+                        ? `${translatedLabels.searchingFor} "${searchTerm}" - ${selectedDistrict}` 
+                        : `${translatedLabels.searchingFor} "${searchTerm}"`}
                     </h2>
                     
                     <div className="flex overflow-x-auto pb-4 gap-4 -mx-4 px-4 snap-x">
@@ -262,6 +411,20 @@ const Home = () => {
                         </Link>
                       ))}
                     </div>
+
+                    {/* About Us Section for search results page */}
+                    <Card className="mt-12 mb-4">
+                      <CardContent className="p-6">
+                        <h2 className="text-xl font-bold mb-4">{translatedLabels.aboutUsTitle}</h2>
+                        <p className="text-gray-600 mb-4">{translatedLabels.aboutUsContent}</p>
+                        <Button 
+                          onClick={() => window.open("https://goverment-tourism.org", "_blank")}
+                          className="bg-heritage-primary hover:bg-heritage-primary/90"
+                        >
+                          {translatedLabels.exploreMore}
+                        </Button>
+                      </CardContent>
+                    </Card>
                   </>
                 ) : (
                   <div className="text-center py-8">
@@ -277,6 +440,20 @@ const Home = () => {
                     >
                       {translatedLabels.resetSearch}
                     </button>
+                    
+                    {/* About Us Section for no results page */}
+                    <Card className="mt-12 mb-4">
+                      <CardContent className="p-6">
+                        <h2 className="text-xl font-bold mb-4">{translatedLabels.aboutUsTitle}</h2>
+                        <p className="text-gray-600 mb-4">{translatedLabels.aboutUsContent}</p>
+                        <Button 
+                          onClick={() => window.open("https://goverment-tourism.org", "_blank")}
+                          className="bg-heritage-primary hover:bg-heritage-primary/90"
+                        >
+                          {translatedLabels.exploreMore}
+                        </Button>
+                      </CardContent>
+                    </Card>
                   </div>
                 )}
               </div>

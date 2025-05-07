@@ -1,3 +1,4 @@
+
 // Flexible API service for connecting with backend
 import { toast } from "sonner";
 import { getSelectedLanguage } from "./api";
@@ -38,16 +39,21 @@ const handleApiError = async (error: any, language: string): Promise<string> => 
   return errorMessage;
 };
 
-// Fetch heritage sites by place name
-export const fetchHeritageSitesByPlace = async (placeName: string): Promise<ApiResponse<HeritageSite[]>> => {
+// Fetch heritage sites by place name and optional district
+export const fetchHeritageSitesByPlace = async (placeName: string, district?: string): Promise<ApiResponse<HeritageSite[]>> => {
   const language = getSelectedLanguage();
   
   try {
-    console.log(`Fetching heritage sites for ${placeName} in ${language}`);
+    console.log(`Fetching heritage sites for ${placeName}${district ? ` in ${district}` : ''} in ${language}`);
     
     // First try to get data from the real backend
     try {
-      const response = await fetch(`${API_URL}/heritage-sites?place=${placeName}&language=${language}`, {
+      const queryParams = new URLSearchParams();
+      queryParams.append('place', placeName);
+      if (district) queryParams.append('district', district);
+      queryParams.append('language', language);
+      
+      const response = await fetch(`${API_URL}/heritage-sites?${queryParams.toString()}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -66,7 +72,7 @@ export const fetchHeritageSitesByPlace = async (placeName: string): Promise<ApiR
     
     // Fallback to the simulated API from api.ts
     const { getHeritageSitesByPlace } = await import("./api");
-    const sites = await getHeritageSitesByPlace(placeName);
+    const sites = await getHeritageSitesByPlace(placeName, district);
     
     // Format the results into proper HeritageSite objects
     if (sites && sites.length > 0) {
@@ -90,7 +96,7 @@ export const fetchHeritageSitesByPlace = async (placeName: string): Promise<ApiR
       return { success: true, data: formattedSites };
     }
     
-    return { success: false, error: `No heritage sites found for "${placeName}"` };
+    return { success: false, error: `No heritage sites found for "${placeName}"${district ? ` in ${district}` : ''}` };
     
   } catch (error: any) {
     const errorMsg = await handleApiError(error, language);

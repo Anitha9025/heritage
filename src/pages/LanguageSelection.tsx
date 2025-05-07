@@ -52,8 +52,9 @@ const LanguageSelection = () => {
         description: translatedDescription as string
       });
       
-      // Ensure language is saved before navigating
+      // Set language in localStorage with additional timestamp to force refresh on all pages
       localStorage.setItem('selectedLanguage', language);
+      localStorage.setItem('languageTimestamp', Date.now().toString());
       
       // Force a full page reload to ensure language changes are applied everywhere
       setTimeout(() => {

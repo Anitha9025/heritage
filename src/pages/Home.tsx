@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { MapPin, MessageCircle, Languages, Mic } from "lucide-react";
@@ -176,9 +175,9 @@ const Home = () => {
 
     setIsListening(true);
     
-    // Initialize speech recognition
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const recognition = new SpeechRecognition();
+    // Initialize speech recognition with proper TypeScript typing
+    const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognitionAPI();
     
     recognition.lang = language === 'English' ? 'en-US' : getLanguageCode(language);
     recognition.continuous = false;

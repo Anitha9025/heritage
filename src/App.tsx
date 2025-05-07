@@ -13,27 +13,30 @@ import Chatbot from "./pages/Chatbot";
 import MapSearch from "./pages/MapSearch";
 import NotFound from "./pages/NotFound";
 
+// Create a new QueryClient instance
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
+const App = () => {
+  return (
+    <QueryClientProvider client={queryClient}>
       <LanguageProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<LanguageSelection />} />
-            <Route path="/home" element={<Home />} />
-            <Route path="/site/:id" element={<SiteInfo />} />
-            <Route path="/chat/:id" element={<Chatbot />} />
-            <Route path="/map" element={<MapSearch />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<LanguageSelection />} />
+              <Route path="/home" element={<Home />} />
+              <Route path="/site/:id" element={<SiteInfo />} />
+              <Route path="/chat/:id" element={<Chatbot />} />
+              <Route path="/map" element={<MapSearch />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
       </LanguageProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+    </QueryClientProvider>
+  );
+};
 
 export default App;

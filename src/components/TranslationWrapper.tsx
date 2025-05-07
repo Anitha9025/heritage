@@ -3,7 +3,7 @@ import { useEffect, useState, ReactNode } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 interface TranslationWrapperProps {
-  children: ReactNode;
+  children?: ReactNode;
   textContent: Record<string, string>;
   render: (translatedTexts: Record<string, string>) => ReactNode;
   loadingComponent?: ReactNode;

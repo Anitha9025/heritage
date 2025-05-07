@@ -1,4 +1,3 @@
-
 // Flexible API service for connecting with backend
 import { toast } from "sonner";
 import { getSelectedLanguage } from "./api";
@@ -20,7 +19,7 @@ export interface ApiResponse<T> {
   error?: string;
 }
 
-const API_URL = process.env.REACT_APP_API_URL || "https://your-backend-api.com"; // Replace with your actual API URL
+const API_URL = import.meta.env.VITE_APP_API_URL || "https://your-backend-api.com"; // Replace with Vite's environment variable
 
 // Helper function to handle API errors
 const handleApiError = async (error: any, language: string): Promise<string> => {
